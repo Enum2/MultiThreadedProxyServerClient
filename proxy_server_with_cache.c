@@ -15,8 +15,12 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <time.h>
+#include <stdbool.h>
 
-#define MAX_CLIENTS 10
+#define MAX_BYTES 4096    //max allowed size of request/response
+#define MAX_CLIENTS 400     //max number of client requests served at a time
+#define MAX_SIZE 200*(1<<20)     //size of the cache
+#define MAX_ELEMENT_SIZE 10*(1<<20)     //max size of an element in cache
 
 typedef struct cache_element cache_element;
 
@@ -41,6 +45,87 @@ pthread_mutex_t lock;
 cache_element* head; 
 int cache_size; 
 
+int handle_request(int clientSocket, ParsedRequest *request, char *tempReq)
+{
+	char *buf = (char*)malloc(sizeof(char)*MAX_BYTES);
+	strcpy(buf, "GET ");
+	strcat(buf, request->path);
+	strcat(buf, " ");
+	strcat(buf, request->version);
+	strcat(buf, "\r\n");
+
+	size_t len = strlen(buf);
+
+	if (ParsedHeader_set(request, "Connection", "close") < 0){
+		printf("set header key not work\n");
+	}
+
+	if(ParsedHeader_get(request, "Host") == NULL)
+	{
+		if(ParsedHeader_set(request, "Host", request->host) < 0){
+			printf("Set \"Host\" header key not working\n");
+		}
+	}
+
+	if (ParsedRequest_unparse_headers(request, buf + len, (size_t)MAX_BYTES - len) < 0) {
+		printf("unparse failed\n");
+		//return -1;				// If this happens Still try to send request without header
+	}
+
+	int server_port = 80;				// Default Remote Server Port
+	if(request->port != NULL)
+		server_port = atoi(request->port);
+
+	int remoteSocketID = connectRemoteServer(request->host, server_port);
+
+	if(remoteSocketID < 0)
+		return -1;
+
+	int bytes_send = send(remoteSocketID, buf, strlen(buf), 0);
+
+	bzero(buf, MAX_BYTES);
+
+	bytes_send = recv(remoteSocketID, buf, MAX_BYTES-1, 0);
+	char *temp_buffer = (char*)malloc(sizeof(char)*MAX_BYTES); //temp buffer
+	int temp_buffer_size = MAX_BYTES;
+	int temp_buffer_index = 0;
+
+	while(bytes_send > 0)
+	{
+		bytes_send = send(clientSocket, buf, bytes_send, 0);
+		
+		for(int i=0;i<bytes_send/sizeof(char);i++){
+			temp_buffer[temp_buffer_index] = buf[i];
+			// printf("%c",buf[i]); // Response Printing
+			temp_buffer_index++;
+		}
+		temp_buffer_size += MAX_BYTES;
+		temp_buffer=(char*)realloc(temp_buffer,temp_buffer_size);
+
+		if(bytes_send < 0)
+		{
+			perror("Error in sending data to client socket.\n");
+			break;
+		}
+		bzero(buf, MAX_BYTES);
+
+		bytes_send = recv(remoteSocketID, buf, MAX_BYTES-1, 0);
+
+	} 
+	temp_buffer[temp_buffer_index]='\0';
+	free(buf);
+	add_cache_element(temp_buffer, strlen(temp_buffer), tempReq);
+	printf("Done\n");
+	free(temp_buffer);
+	
+	
+ 	close(remoteSocketID);
+	return 0;
+}
+bool validateRequest(ParsedRequest* request){
+   return request->host && request->path && (checkHTTPversion(request->version) == 1) ;
+}
+
 void* thread_fn(void* socketNew)
 {
 	sem_wait(&seamaphore); 
@@ -49,10 +134,10 @@ void* thread_fn(void* socketNew)
 	printf("semaphore value:%d\n",p);
     int* t= (int*)(socketNew);
 	int socket=*t;          
-	int bytes_send_client,len;	  // Bytes Transferred
+	int bytes_send_client,len;	
 
 	
-	char *buffer = (char*)calloc(MAX_BYTES,sizeof(char));	// Creating buffer of 4kb for a client
+	char *buffer = (char*)calloc(MAX_BYTES,sizeof(char));	
 	
 	
 	bzero(buffer, MAX_BYTES);								// Making buffer zero
@@ -71,7 +156,6 @@ void* thread_fn(void* socketNew)
 		}
 	}
 
-	// printf("--------------------------------------------\n");
 	// printf("%s\n",buffer);
 	// printf("----------------------%d----------------------\n",strlen(buffer));
 	
@@ -100,31 +184,28 @@ void* thread_fn(void* socketNew)
 		}
 		printf("Data retrived from the Cache\n\n");
 		printf("%s\n\n",response);
-		// close(socketNew);
-		// sem_post(&seamaphore);
-		// return NULL;
+		
 	}
-	
-	
 	else if(bytes_send_client > 0)
 	{
 		len = strlen(buffer); 
 		//Parsing the request
 		ParsedRequest* request = ParsedRequest_create();
 		
-        //ParsedRequest_parse returns 0 on success and -1 on failure.On success it stores parsed request in
+        //ParsedRequest_parse returns 0 on success and -1 on failure On success it stores parsed request in
         // the request
-		if (ParsedRequest_parse(request, buffer, len) < 0) 
+		int isRequestNotPared=ParsedRequest_parse(request, buffer, len) < 0;
+		if (isRequestNotPared) 
 		{
 		   	printf("Parsing failed\n");
 		}
 		else
 		{	
 			bzero(buffer, MAX_BYTES);
-			if(!strcmp(request->method,"GET"))							
+			bool isGetRequestORNot=!strcmp(request->method,"GET");
+			if(isGetRequestORNot)							
 			{
-                
-				if( request->host && request->path && (checkHTTPversion(request->version) == 1) )
+				if(validateRequest(request))
 				{
 					bytes_send_client = handle_request(socket, request, tempReq);		// Handle GET request
 					if(bytes_send_client == -1)
@@ -133,8 +214,7 @@ void* thread_fn(void* socketNew)
 					}
 
 				}
-				else
-					sendErrorMessage(socket, 500);			// 500 Internal Error
+				else sendErrorMessage(socket, 500);			// 500 Internal Error
 
 			}
             else
@@ -147,7 +227,6 @@ void* thread_fn(void* socketNew)
 		ParsedRequest_destroy(request);
 
 	}
-
 	else if( bytes_send_client < 0)
 	{
 		perror("Error in receiving from client.\n");
