@@ -69,10 +69,9 @@ int handle_request(int clientSocket, ParsedRequest *request, char *tempReq)
 
 	if (ParsedRequest_unparse_headers(request, buf + len, (size_t)MAX_BYTES - len) < 0) {
 		printf("unparse failed\n");
-		//return -1;				// If this happens Still try to send request without header
 	}
 
-	int server_port = 80;				// Default Remote Server Port
+	int server_port = 80;			
 	if(request->port != NULL)
 		server_port = atoi(request->port);
 
@@ -86,17 +85,18 @@ int handle_request(int clientSocket, ParsedRequest *request, char *tempReq)
 	bzero(buf, MAX_BYTES);
 
 	bytes_send = recv(remoteSocketID, buf, MAX_BYTES-1, 0);
-	char *temp_buffer = (char*)malloc(sizeof(char)*MAX_BYTES); //temp buffer
+	// temp buffer for getting response from the server 
+	char *temp_buffer = (char*)malloc(sizeof(char)*MAX_BYTES);
 	int temp_buffer_size = MAX_BYTES;
 	int temp_buffer_index = 0;
 
 	while(bytes_send > 0)
 	{
 		bytes_send = send(clientSocket, buf, bytes_send, 0);
-		
+		printf("printing ")
 		for(int i=0;i<bytes_send/sizeof(char);i++){
 			temp_buffer[temp_buffer_index] = buf[i];
-			// printf("%c",buf[i]); // Response Printing
+			// printf("%c",buf[i]); 
 			temp_buffer_index++;
 		}
 		temp_buffer_size += MAX_BYTES;
