@@ -1,145 +1,155 @@
-🧩 Multithreaded HTTP Proxy Server with LRU Cache
-📌 Overview
+# 🚀 Multithreaded HTTP Proxy Server with LRU Cache
 
-This project implements a multithreaded HTTP proxy server in C that handles multiple client requests concurrently, forwards valid HTTP GET requests to remote web servers, and caches responses using an LRU (Least Recently Used) caching policy to improve performance.
+A fully functional **Multithreaded HTTP Proxy Server** implemented in **C**, designed to handle multiple client requests concurrently while improving performance using an **LRU (Least Recently Used) caching mechanism**.  
+The project uses **POSIX threads**, **semaphores**, and **mutex locks** to ensure thread safety and efficient concurrency control.
 
-The proxy server uses POSIX threads, semaphores, and mutex locks to ensure efficient concurrency control and thread-safe cache operations.
+---
 
-✨ Features
+## 📌 Project Overview
 
-Supports HTTP GET requests
+This proxy server acts as an intermediary between clients and remote web servers.  
+It intercepts HTTP GET requests, checks if the response is already cached, and either serves it directly (cache hit) or forwards the request to the remote server (cache miss).
 
-Multithreaded client handling using pthread
+The project demonstrates core concepts of:
+- Computer Networks
+- Operating Systems
+- Multithreading
+- Synchronization
+- Memory management
 
-Semaphore-based control for maximum concurrent clients
+---
 
-LRU Cache implementation using a linked list
+## ✨ Features
 
-Cache HIT / MISS handling
+- ✅ Supports HTTP **GET** requests
+- 🧵 Multithreaded client handling using `pthread`
+- 🚦 Semaphore-based control for maximum concurrent clients
+- 🗂 In-memory **LRU Cache** using linked list
+- 🔒 Thread-safe cache access using mutex locks
+- ⚡ Faster response time for cached requests
+- ❌ Proper HTTP error handling (400, 403, 404, 500, 501, 505)
 
-Thread-safe cache access using mutex
+---
 
-Handles common HTTP errors (400, 403, 404, 500, 501, 505)
+## 🧠 System Architecture
 
-🏗 System Architecture
-
-Clients (c1, c2, ...)
-        |
-        v
+Clients (c1, c2, c3...)
+|
+v
 Proxy Listening Socket (proxysocketid)
-        |
-        v
+|
+v
 Semaphore (MAX_CLIENTS limit)
-        |
-        v
-Worker Threads (pthread)
-        |
-        v
-LRU Cache  <---->  Remote Web Server
-        |
-        v
+|
+v
+Worker Threads (pthread_create)
+|
+v
+LRU Cache <----> Remote Web Server
+|
+v
 Client Response
 
-🔄 Request Flow
 
-Client sends an HTTP GET request to the proxy.
+---
 
-Proxy accepts the connection and creates a new thread.
+## 🔄 Request Flow
 
-Semaphore ensures client limit is not exceeded.
+1. Client sends an HTTP GET request to the proxy.
+2. Proxy accepts the connection and spawns a new worker thread.
+3. Semaphore ensures the number of active clients does not exceed `MAX_CLIENTS`.
+4. Proxy checks the LRU cache for the requested URL.
+   - **Cache HIT** → Response is sent directly to the client.
+   - **Cache MISS** → Request is forwarded to the remote server.
+5. Response from the remote server is:
+   - Streamed to the client.
+   - Stored in cache with LRU metadata.
+6. If cache is full, the least recently used entry is evicted.
+7. Thread closes connection, releases semaphore, and exits.
 
-Proxy checks if the request exists in the cache:
+---
 
-Cache HIT → Response sent directly to client.
+## 🗂 LRU Cache Design
 
-Cache MISS → Request forwarded to remote server.
+- Cache implemented using a **singly linked list**
+- Each cache entry stores:
+  - URL (request key)
+  - Response data
+  - Length of data
+  - `lru_time_track` timestamp
+- **Most Recently Used (MRU)** element is kept at the head
+- **Least Recently Used (LRU)** element is removed when cache exceeds size limit
 
-Remote server response is:
+---
 
-Streamed to the client.
+## 🔐 Synchronization Mechanisms
 
-Stored in cache with LRU metadata.
+| Resource | Mechanism Used |
+|--------|----------------|
+| Client concurrency | Semaphore |
+| Cache operations | Mutex lock |
+| Thread handling | POSIX threads |
 
-If cache is full, least recently used entry is evicted.
+---
 
-Thread releases resources and exits.
+## 📁 Project Structure
 
-🗂 Cache Design (LRU)
-
-Implemented as a singly linked list
-
-Each node contains:
-
-URL (request key)
-
-Response data
-
-Length of data
-
-lru_time_track timestamp
-
-Most recently used item is moved to the head.
-
-Least recently used item is removed when cache is full.
-
-🔐 Synchronization
-Resource	Mechanism
-Client limit	Semaphore
-Cache access	Mutex lock
-Threads	POSIX pthreads
-
-Project Structure
 .
-├── proxy_server_with_cache.c   // Main proxy server implementation
-├── proxy_parse.c               // HTTP request parsing logic
-├── proxy_parse.h               // Header for parser
-├── Makefile                    // Build instructions
-├── README.md                   // Project documentation
+├── proxy_server_with_cache.c // Main proxy server implementation
+├── proxy_parse.c // HTTP request parsing logic
+├── proxy_parse.h // Parser definitions
+├── Makefile // Build instructions
+└── README.md // Project documentation
 
-⚙️ Build Instructions
 
-Compile the project using:
+---
 
+## ⚙️ Build Instructions
+
+Compile the project using the following commands:
+
+```bash
 g++ -g -Wall -o proxy_parse.o -c proxy_parse.c -lpthread
 g++ -g -Wall -o proxy.o -c proxy_server_with_cache.c -lpthread
 g++ -g -Wall -o proxy proxy_parse.o proxy.o -lpthread
 
-▶️ How to Run
+Running the Proxy Server
 ./proxy <PORT_NUMBER>
 
 
-Example:
-
-./proxy 8080
-
-
-Configure your browser or curl to use:
-
-Proxy: localhost
-Port: 8080
-
-🧪 Example Test
-curl -x localhost:8080 http://example.com
-
-🚫 Limitations
+Limitations
 
 Supports only HTTP GET requests
 
-Does not support HTTPS (CONNECT)
+HTTPS (CONNECT method) is not supported
 
-Cache stored in memory (non-persistent)
+Cache is stored in memory (non-persistent)
 
-📈 Future Improvements
+🚀 Future Enhancements
 
 HTTPS support using CONNECT tunneling
 
-Cache persistence
-
-Improved eviction strategy
+Persistent disk-based cache
 
 Thread pool optimization
+
+Improved cache eviction strategies
 
 👨‍💻 Author
 
 Sujal Suryawanshi
-Multithreaded Proxy Server Project
+Multithreaded HTTP Proxy Server
+Computer Networks / Operating Systems Project
+
+⭐ If you found this project useful, consider giving it a star!
+
+
+---
+
+If you want next, I can:
+- Add **diagram images**
+- Create **project report (PDF/Word)**
+- Write **viva questions & answers**
+- Prepare **PPT slides**
+
+Just tell me 👍
