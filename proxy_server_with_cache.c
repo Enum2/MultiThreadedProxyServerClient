@@ -96,25 +96,19 @@ int sendErrorMessage(int socket, int status_code)
 
 int connectRemoteServer(char* host_addr, int port_num)
 {
-	// Creating Socket for remote server ---------------------------
-
 	int remoteSocket = socket(AF_INET, SOCK_STREAM, 0);
-
 	if( remoteSocket < 0)
 	{
 		printf("Error in Creating Socket.\n");
 		return -1;
 	}
-	
 	// Get host by the name or ip address provided
-
 	struct hostent *host = gethostbyname(host_addr);	
 	if(host == NULL)
 	{
 		fprintf(stderr, "No such host exists.\n");	
 		return -1;
 	}
-
 	// inserts ip address and port number of host in struct `server_addr`
 	struct sockaddr_in server_addr;
 
@@ -123,9 +117,6 @@ int connectRemoteServer(char* host_addr, int port_num)
 	server_addr.sin_port = htons(port_num);
 
 	bcopy((char *)host->h_addr,(char *)&server_addr.sin_addr.s_addr,host->h_length);
-
-	// Connect to Remote server ----------------------------------------------------
-
 	if( connect(remoteSocket, (struct sockaddr*)&server_addr, (socklen_t)sizeof(server_addr)) < 0 )
 	{
 		fprintf(stderr, "Error in connecting !\n"); 
@@ -160,7 +151,6 @@ int handle_request(int clientSocket, ParsedRequest *request, char *tempReq)
 
 	if (ParsedRequest_unparse_headers(request, buf + len, (size_t)MAX_BYTES - len) < 0) {
 		printf("unparse failed\n");
-		//return -1;				// If this happens Still try to send request without header
 	}
 
 	int server_port = 80;				// Default Remote Server Port
@@ -224,7 +214,7 @@ int checkHTTPversion(char *msg)
 	}
 	else if(strncmp(msg, "HTTP/1.0", 8) == 0)			
 	{
-		version = 1;										// Handling this similar to version 1.1
+		version = 1;										
 	}
 	else
 		version = -1;
@@ -262,11 +252,6 @@ void* thread_fn(void* socketNew)
 			break;
 		}
 	}
-
-	// printf("--------------------------------------------\n");
-	// printf("%s\n",buffer);
-	// printf("----------------------%d----------------------\n",strlen(buffer));
-	
 	char *tempReq = (char*)malloc(strlen(buffer)*sizeof(char)+1);
     //tempReq, buffer both store the http request sent by client
 	size_t blen = strlen(buffer);
@@ -274,9 +259,6 @@ for (size_t i = 0; i < blen; i++)
 {
     tempReq[i] = buffer[i];
 }
-
-	
-	//checking for the request in cache 
 	struct cache_element* temp = find(tempReq);
 
 	if( temp != NULL){
@@ -317,10 +299,9 @@ for (size_t i = 0; i < blen; i++)
 			bzero(buffer, MAX_BYTES);
 			if(!strcmp(request->method,"GET"))							
 			{
-                
 				if( request->host && request->path && (checkHTTPversion(request->version) == 1) )
 				{
-					bytes_send_client = handle_request(socket, request, tempReq);		// Handle GET request
+					bytes_send_client = handle_request(socket, request, tempReq);	
 					if(bytes_send_client == -1)
 					{	
 						sendErrorMessage(socket, 500);
@@ -337,7 +318,6 @@ for (size_t i = 0; i < blen; i++)
             }
     
 		}
-        //freeing up the request pointer
 		ParsedRequest_destroy(request);
 
 	}
