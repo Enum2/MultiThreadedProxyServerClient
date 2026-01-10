@@ -276,18 +276,13 @@ for (size_t i = 0; i < blen; i++)
 		}
 		printf("Data retrived from the Cache\n\n");
 		printf("%s\n\n",response);
-		// close(socketNew);
-		// sem_post(&seamaphore);
-		// return NULL;
 	}
 	
 	
 	else if(bytes_send_client > 0)
 	{
 		len = strlen(buffer); 
-		//Parsing the request
 		ParsedRequest* request = ParsedRequest_create();
-		
         //ParsedRequest_parse returns 0 on success and -1 on failure.On success it stores parsed request in
         // the request
 		if (ParsedRequest_parse(request, buffer, len) < 0) 
@@ -399,7 +394,7 @@ int main(int argc, char * argv[]) {
 		exit(1);
 	}
 
-	int i = 0; // Iterator for thread_id (tid) and Accepted Client_Socket for each thread
+	int i = 0; 
 	int Connected_socketId[MAX_CLIENTS];   // This array stores socket descriptors of connected clients
 
     // Infinite Loop for accepting connections
