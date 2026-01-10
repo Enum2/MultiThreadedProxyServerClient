@@ -530,10 +530,6 @@ int add_cache_element(char* data,int size,char* url){
         cache_size+=element_size;
         temp_lock_val = pthread_mutex_unlock(&lock);
 		printf("Add Cache Lock Unlocked %d\n", temp_lock_val);
-		//sem_post(&cache_lock);
-		// free(data);
-		// printf("--\n");
-		// free(url);
         return 1;
     }
     return 0;

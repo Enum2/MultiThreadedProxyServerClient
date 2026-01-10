@@ -170,7 +170,6 @@ int ParsedHeader_printHeaders(struct ParsedRequest * pr, char * buf,
      char * current = buf;
      struct ParsedHeader * ph;
      size_t i = 0;
-
      if(len < ParsedHeader_headersLen(pr))
      {
 	  debug("buffer for printing headers too small\n");
