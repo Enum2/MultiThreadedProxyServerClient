@@ -104,6 +104,9 @@ Client Response
 
 ---
 
+
+---
+
 ## ⚙️ Build Instructions
 
 Compile the project using the following commands:
@@ -113,11 +116,14 @@ g++ -g -Wall -o proxy_parse.o -c proxy_parse.c -lpthread
 g++ -g -Wall -o proxy.o -c proxy_server_with_cache.c -lpthread
 g++ -g -Wall -o proxy proxy_parse.o proxy.o -lpthread
 
-Running the Proxy Server
+▶️ Running the Proxy Server
+
 ./proxy <PORT_NUMBER>
 
 
-Limitations
+curl -x localhost:8080 http://example.com
+
+🚫 Limitations
 
 Supports only HTTP GET requests
 
@@ -139,9 +145,6 @@ Improved cache eviction strategies
 
 Sujal Suryawanshi
 Multithreaded HTTP Proxy Server
-Computer Networks / Operating Systems Project
-
-⭐ If you found this project useful, consider giving it a star!
 
 
 ---
