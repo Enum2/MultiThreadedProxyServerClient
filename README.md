@@ -34,6 +34,7 @@ The project demonstrates core concepts of:
 ## 🧠 System Architecture
 
 Clients (c1, c2, c3...)
+
 |
 v
 Proxy Listening Socket (proxysocketid)
