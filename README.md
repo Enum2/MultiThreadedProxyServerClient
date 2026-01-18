@@ -33,26 +33,8 @@ The project demonstrates core concepts of:
 
 ## 🧠 System Architecture
 
-Clients (c1, c2, c3...)
+<img width="1600" height="480" alt="image" src="https://github.com/user-attachments/assets/65097ae1-0547-41f1-9d55-0b31077ce382" />
 
-|
-v
-Proxy Listening Socket (proxysocketid)
-|
-v
-Semaphore (MAX_CLIENTS limit)
-|
-v
-Worker Threads (pthread_create)
-|
-v
-LRU Cache <----> Remote Web Server
-|
-v
-Client Response
-
-
----
 
 ## 🔄 Request Flow
 
